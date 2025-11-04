@@ -1,0 +1,2 @@
+import AdvancedMenumaker
+AdvancedMenumaker.createMenu()

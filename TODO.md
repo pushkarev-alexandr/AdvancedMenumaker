@@ -1,0 +1,1 @@
+- [] Consider hotkeys and custom commands for gizmo creation

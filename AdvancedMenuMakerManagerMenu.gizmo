@@ -1,0 +1,38 @@
+#! C:/Program Files/Nuke13.1v2/nuke-13.1.2.dll -nx
+version 13.1 v2
+Gizmo {
+ addUserKnob {20 advanced_menu_maker_tab l AdvancedMenuMaker}
+ addUserKnob {2 gizmos_folder l "Gizmos folder" t "Path to folder with gizmos"}
+ addUserKnob {6 load_gizmo_as_group l "Load gizmo as group" t "Whether or not to create gizmos as group" +STARTLINE}
+ load_gizmo_as_group true
+ addUserKnob {6 multi_menu_mode l "Every folder is separate menu" t "If checked every folder in 'Gizmos base folder' will be created as separate menu item. If uncheckd(default state) all gizmos and folders will be placed in one menu item called by name of 'Gizmos base folder' name" +STARTLINE}
+ addUserKnob {6 base_folder_menu l "Create menu for base folder" t "if 'Every folder is separate menu' checked for every folder in 'Gizmos base folder' will be created corresponding menu item. And you can decide whether or not to create menu for 'Gizmos base folder' itself" -STARTLINE}
+ base_folder_menu true
+ addUserKnob {20 igonre_lists_group l "Igonre Lists" t "You can defind here some usefull rules and restrictions" n 1}
+ igonre_lists_group 0
+ addUserKnob {1 group_restricted l "Do not load as group" t "Some gizmos can't be used as group because of specific knobs such as EYEDROPPER or ARRAY or because of any other circumstances. Here you can specify the names of those gizmos.\nSeparate names by | character. In example:\nPointPosition|InRealCamerashake"}
+ addUserKnob {1 completely_igonre_folders l "Completely ingnore folders" t "For folders with specified names will not be created menu items and this folder will not be added to Nuke Plugin Path. So such a folder will be completely ignored by AdvancedMenuMaker."}
+ addUserKnob {1 do_not_create_menu l "Only add to Nuke Plugin Path" t "For all folders with specified names will not be created menu item but this folders will be added to Nuke Plugin Path so you can have access to gizmos or scripts from this folders and manualy create menu for them"}
+ addUserKnob {1 ignore_submenus l "Do not create submenus" t "All gizmos from specified folders will be created in one menu even if gizmos lay in separate folder"}
+ addUserKnob {20 igonre_lists_end_group l "Ignore Lists endGroup" n -1}
+ addUserKnob {20 icons_settings_group l "Icons settings" t "Settings related to icons for menus and gizmos" n 1}
+ icons_settings_group 0
+ addUserKnob {6 icons_in_specific_folder l "Icons in specific folder" t "By default AdvancedMenuMaker searchs for icons in current folder next to the gizmo. But you can specify particular folder where to search for icons." +STARTLINE}
+ addUserKnob {2 icons_folder l "Icons folder" t "Defines folder where to search for icons when 'icons in specific folder' checked"}
+ addUserKnob {6 allow_icons_from_plugin_path l "Allow icons from Nuke Plugin Path" t "If icon was not found specify whether or not to try find icon in Nuke Plugin Path folders" +STARTLINE}
+ allow_icons_from_plugin_path true
+ addUserKnob {20 icons_settings_end_group l "Icon Settings endGroup" n -1}
+ addUserKnob {22 apply_button l Apply +STARTLINE}
+ addUserKnob {22 cancel_button l Cancel -STARTLINE}
+}
+ Input {
+  inputs 0
+  name Input1
+  xpos 0
+ }
+ Output {
+  name Output1
+  xpos 0
+  ypos 300
+ }
+end_group
