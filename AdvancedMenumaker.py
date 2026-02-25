@@ -12,6 +12,7 @@
 #полезно для папок с устаревшими гизмами, для обратной совместимости или для папок внутри которых есть свой menu.py который сам создает менюшку
 #IGNORE_SUBFOLDERS_STRUCTURE все гизмы из этой папки будут в одной менюшке, даже если внутри папки есть подпапки, новые менюшки создаваться не будут
 #GROUP_RESTRICTED список названий гизм, которым нельзя быть группами, из-за специфичных кнобов по типу Eyedropper_Knob или IArray_Knob в гизме PointPositionMask
+#IGNORE_GIZMOS список имен гизм или файлов (с расширением или без), для которых не будет создаваться пункт в меню
 #MULTI_MENU_MODE мультипапочный режим, когда внутри папки Gizmos каждая папка, это отдельная менюшка
 #по умолчанию этот режим False, что означает, что будет создана одна менюшка Gizmos в которой будут все гизмы и подпапки
 #MENU_FOR_BASE_FOLDER если включен мультипапочный режим этот параметр разрешает или запрещает создание менюшки для основной базовой папки CUSTOM_GIZMOS_PATH
@@ -25,10 +26,11 @@
 import nuke, os
 
 CUSTOM_GIZMOS_PATHS = '.../gizmos;~/.nuke/my_gizmos'
-IGNORE_FOLDERS_FULL = ['__pycache__','.git','autosaves','Cattery','Cryptomatte-master','freelance','backup','autosaves','GizmoPacks','NukeDiffusion','ComfyUI','ComfyUINuke','NukeSamurai']#__pycache__ на всякий случай,   'byn_test_02','MRP' не используются,   у Cattery свой рекурсивный проход pluginPath и добавляется она в menu.py
+IGNORE_FOLDERS_FULL = ['__pycache__','.git','autosaves','Cattery','Cryptomatte-master','freelance','backup','autosaves','GizmoPacks','NukeDiffusion','ComfyUI','ComfyUINuke','NukeSamurai', 'Beeble', 'TechCheck']#__pycache__ на всякий случай,   'byn_test_02','MRP' не используются,   у Cattery свой рекурсивный проход pluginPath и добавляется она в menu.py
 IGNORE_MENU_FOLDERS = ['manual','obsolete','from_freelance']
 IGNORE_SUBFOLDERS_STRUCTURE = ['KZ_toolsets']
 GROUP_RESTRICTED = ['PointPositionMask','Defocus_Aberrations','afanasy','ColorMatrixManual']
+IGNORE_GIZMOS = ['Conform_base']
 MULTI_MENU_MODE = False
 MENU_FOR_BASE_FOLDER = True
 LOAD_GIZMO_AS_GROUP = True
@@ -255,6 +257,9 @@ def addMenuRecursive(menu,path,isIgnoreSubfolders=False,index=-1,stop=False):
                 spl = os.path.splitext(i)
                 gName = spl[0]
                 ext = spl[1]#расширение с точкой
+                #пропускаем гизмы/файлы, которые пользователь указал в списке IGNORE_GIZMOS
+                if gName in IGNORE_GIZMOS or i in IGNORE_GIZMOS:
+                    continue
                 if isAnyGizmo([ext]):
                     iconPath = getIconPath(gName,path)
                     if ext=='.gizmo':
