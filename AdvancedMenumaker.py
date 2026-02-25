@@ -6,7 +6,7 @@
 #v2.1.1
 #create by: Pushkarev Aleksandr
 
-#CUSTOM_GIZMOS_PATHS через точку с запятой ; можно написать пути до папок для которых будет создаваться менюшка, для каждой отдельной папки будут действовать общие правила описанные ниже
+#CUSTOM_GIZMOS_PATHS список путей до папок для которых будет создаваться менюшка, для каждой отдельной папки будут действовать общие правила описанные ниже
 #IGNORE_FOLDERS_FULL папки с такими названиеми не будут добавляться в pluginPath и менюшку, полное игнорирование папки
 #IGNORE_MENU_FOLDERS папки с этими названиями не будут создаваться в меню, но гизмы из этой папки могут использоваться если они не запрещены IGNORE_FOLDERS_FULL
 #полезно для папок с устаревшими гизмами, для обратной совместимости или для папок внутри которых есть свой menu.py который сам создает менюшку
@@ -25,7 +25,7 @@
 
 import nuke, os
 
-CUSTOM_GIZMOS_PATHS = '.../gizmos;~/.nuke/my_gizmos'
+CUSTOM_GIZMOS_PATHS = ['.../gizmos','~/.nuke/my_gizmos']
 IGNORE_FOLDERS_FULL = ['__pycache__','.git','autosaves','Cattery','Cryptomatte-master','freelance','backup','autosaves','GizmoPacks','NukeDiffusion','ComfyUI','ComfyUINuke','NukeSamurai', 'Beeble', 'TechCheck']#__pycache__ на всякий случай,   'byn_test_02','MRP' не используются,   у Cattery свой рекурсивный проход pluginPath и добавляется она в menu.py
 IGNORE_MENU_FOLDERS = ['manual','obsolete','from_freelance']
 IGNORE_SUBFOLDERS_STRUCTURE = ['KZ_toolsets']
@@ -309,7 +309,7 @@ def updateMenu(path,name,stop=False):
 #запускается из menu.py при запуске нюка, создает менюшки
 #здесь не запускается addPluginPathRecursive потому что он запускается в init.py при старте нюка
 def createMenu():
-    for CUSTOM_GIZMOS_PATH in CUSTOM_GIZMOS_PATHS.split(';'):
+    for CUSTOM_GIZMOS_PATH in CUSTOM_GIZMOS_PATHS:
         CUSTOM_GIZMOS_PATH = bakeRelativePath(CUSTOM_GIZMOS_PATH)#расскрываем относительный путь
         CUSTOM_GIZMOS_PATH = checkPath(CUSTOM_GIZMOS_PATH)#раскрываем переменные, добавляем слеш в конце
         if os.path.isdir(CUSTOM_GIZMOS_PATH):#все заработает только если такая папка существует
