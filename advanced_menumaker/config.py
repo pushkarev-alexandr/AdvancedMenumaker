@@ -3,7 +3,7 @@ Configuration variables for AdvancedMenumaker.
 Edit values here to customize how gizmo menus are built.
 """
 
-CUSTOM_GIZMOS_PATHS = ['.../gizmos', '~/.nuke/my_gizmos']
+CUSTOM_GIZMOS_PATHS = ['../../gizmos', '~/.nuke/my_gizmos']
 
 IGNORE_FOLDERS_FULL = [
     '__pycache__',
