@@ -1,2 +1,3 @@
 import AdvancedMenumaker
+
 AdvancedMenumaker.createMenu()
