@@ -5,6 +5,7 @@ and creates Nuke menus for them.
 
 import nuke, os
 from pathlib import Path
+from typing import Any, Optional, Sequence, Union
 
 from advanced_menumaker.config import (
     CUSTOM_GIZMOS_PATHS,
@@ -22,7 +23,10 @@ from advanced_menumaker.config import (
     ICONS_EXT,
 )
 
-def normalizePath(path):
+PathInput = Union[str, Path]
+
+
+def normalizePath(path: Optional[PathInput]) -> Optional[Path]:
     """
     Expand vars/user and resolve relative paths against this file location.
     Returns None for empty input.
@@ -35,29 +39,29 @@ def normalizePath(path):
         normalized = Path(__file__).resolve().parent / normalized
     return normalized.resolve(strict=False)
 
-def toNukePath(path):
+def toNukePath(path: PathInput) -> str:
     """Convert Path/string to Nuke-friendly path with forward slashes."""
     return Path(path).as_posix()
 
 # Prepare variables
-ICONS_SEP_FOLDER_PATH = normalizePath(ICONS_SEP_FOLDER_PATH)
-currentModuleName = os.path.splitext(os.path.basename(__file__))[0]
+ICONS_SEP_FOLDER_PATH: Optional[Path] = normalizePath(ICONS_SEP_FOLDER_PATH)
+currentModuleName: str = os.path.splitext(os.path.basename(__file__))[0]
 
-def isAnyGizmo(lst):
+def isAnyGizmo(lst: Sequence[str]) -> bool:
     """Return True if at least one string in the list has a .gizmo or .nk extension."""
     for i in lst:
         if i.endswith('.gizmo') or i.endswith('.nk'):
             return True
     return False
 
-def isAnyFolder(path, lst):
+def isAnyFolder(path: Path, lst: Sequence[str]) -> bool:
     """Return True if path contains at least one directory whose name is in lst."""
     for i in lst:
         if (path / i).is_dir():
             return True
     return False
 
-def isAnyGizmosRecursive(path):
+def isAnyGizmosRecursive(path: Optional[PathInput]) -> bool:
     """Recursively walk the folder and its contents; return True if any gizmo is found."""
     path = normalizePath(path)
     if path and path.is_dir():
@@ -70,7 +74,7 @@ def isAnyGizmosRecursive(path):
                     return True
     return False
 
-def getNewNodes(allNodes):
+def getNewNodes(allNodes: Sequence[Any]) -> list[Any]:
     """
     Given a list of all nodes before creating new ones, return a list of newly
     created nodes that were not in the original list.
@@ -81,7 +85,7 @@ def getNewNodes(allNodes):
             newNodes.append(i)
     return newNodes
 
-def getLastClickPosition():
+def getLastClickPosition() -> list[int]:
     """
     Return the position of the last mouse click. Works even if nodes are selected:
     temporarily deselects them, creates a Dot to read position, then restores selection.
@@ -97,7 +101,7 @@ def getLastClickPosition():
         node.setSelected(True)
     return [int(x), int(y)]
 
-def inputsFromOneNodeToAnother(fromNode, toNode):
+def inputsFromOneNodeToAnother(fromNode: Any, toNode: Any) -> None:
     """Reconnect all inputs that were connected to fromNode so they connect to toNode."""
     for depNode in fromNode.dependent(forceEvaluate = False):
         for i in range(depNode.inputs()):
@@ -139,7 +143,7 @@ def autocolor(node):
                         node.knob('tile_color').setValue(color)
                         return
 
-def formatGizmoName(basename):
+def formatGizmoName(basename: str) -> str:
     """
     Build a unique gizmo node name from a file basename: strip extension, replace
     spaces with underscores, append numeric suffix (with extra underscore if name
@@ -155,7 +159,7 @@ def formatGizmoName(basename):
                 return name+str(i)
         return 'Something_wrong_with_node_naming'
 
-def loadGizmoAsGroup(pathToGizmo):
+def loadGizmoAsGroup(pathToGizmo: str) -> None:
     """
     Load a .gizmo file as a Group node: read file, replace 'Gizmo' with 'Group',
     paste into script, then position and name the new node. Falls back to createNode
@@ -191,7 +195,7 @@ def loadGizmoAsGroup(pathToGizmo):
     else:
         nuke.createNode(basename)
 
-def getIconPath(name, path=None):
+def getIconPath(name: str, path: Optional[PathInput] = None) -> str:
     """
     Return path to an icon (absolute or relative). name is the icon name without
     extension; path is the folder of the current gizmo/menu. Only .png is supported.
@@ -212,7 +216,7 @@ def getIconPath(name, path=None):
     else:
         return ''
 
-def getPseudonym(menu, fName):
+def getPseudonym(menu: Any, fName: str) -> str:
     """If a menu item named fName already exists, return fName with a numeric suffix."""
     if menu.findItem(fName):
         for i in range(1, 100):
@@ -221,14 +225,20 @@ def getPseudonym(menu, fName):
                 return pseudonym
     return fName
 
-def folderName(path):
+def folderName(path: Optional[PathInput]) -> str:
     """Return the last non-empty component of the path (the folder name)."""
     path = normalizePath(path)
     if path:
         return path.name
     return ''
 
-def addMenuRecursive(menu, path, isIgnoreSubfolders=False, index=-1, stop=False):
+def addMenuRecursive(
+    menu: Any,
+    path: Optional[PathInput],
+    isIgnoreSubfolders: bool = False,
+    index: int = -1,
+    stop: bool = False,
+) -> Optional[Any]:
     """
     Recursively add menu items for gizmos under path. isIgnoreSubfolders flattens
     subfolders into the same menu; stop stops recursion (used for base folder in multi-menu mode).
@@ -269,7 +279,7 @@ def addMenuRecursive(menu, path, isIgnoreSubfolders=False, index=-1, stop=False)
         return newMenu
     return None
 
-def addPluginPathRecursive(path):
+def addPluginPathRecursive(path: Optional[PathInput]) -> None:
     """
     Add path and all its subfolders to nuke.pluginPath, except folders whose name
     is in IGNORE_FOLDERS_FULL.
@@ -284,7 +294,7 @@ def addPluginPathRecursive(path):
             if child_path.is_dir():
                 addPluginPathRecursive(child_path)
 
-def updateMenu(path, name, stop=False):
+def updateMenu(path: Optional[PathInput], name: str, stop: bool = False) -> None:
     """
     Remove the existing menu with the given name and recreate it in the same position.
     Name is passed because it may have a numeric suffix from getPseudonym.
@@ -303,7 +313,7 @@ def updateMenu(path, name, stop=False):
             updateCommand = f'{currentModuleName}.updateMenu("{toNukePath(path)}", "{newMenu.name()}", {stop})'
             newMenu.addCommand('update', updateCommand, icon='update.png')
 
-def createMenu():
+def createMenu() -> None:
     """
     Entry point called from menu.py on Nuke startup. Creates menus for each path
     in CUSTOM_GIZMOS_PATHS. addPluginPathRecursive is run from init.py, not here.
