@@ -4,6 +4,7 @@ and creates Nuke menus for them.
 """
 
 import nuke, os
+from pathlib import Path
 
 from advanced_menumaker.config import (
     CUSTOM_GIZMOS_PATHS,
@@ -21,37 +22,25 @@ from advanced_menumaker.config import (
     ICONS_EXT,
 )
 
-def bakeRelativePath(path):
-    """Resolve a relative path: one dot = current dir, two dots = up one level, three = up two, etc."""
-    if path.startswith('.'):
-        dirname = os.path.dirname(__file__).replace('\\', '/')+'/'
-        c = len(path)-len(path.lstrip('.'))
-        spl = dirname.split('/')
-        if len(spl)>c:
-            resSpl = spl[:-c]
-        else:
-            resSpl = spl[:1]
-        return '/'.join(resSpl)+path.lstrip('.')
-    return path
+def normalizePath(path):
+    """
+    Expand vars/user and resolve relative paths against this file location.
+    Returns None for empty input.
+    """
+    if not path:
+        return None
+    expanded = os.path.expandvars(os.path.expanduser(str(path)))
+    normalized = Path(expanded)
+    if not normalized.is_absolute():
+        normalized = Path(__file__).resolve().parent / normalized
+    return normalized.resolve(strict=False)
 
-def checkPath(path):
-    """
-    Normalize path: replace backslashes with forward slashes, ensure trailing slash.
-    Expand ~ and %home% to the user's home directory. Returns '' for empty input.
-    """
-    if path:
-        if path.startswith('~'):
-            path = os.path.expanduser(path)
-        elif path.lower().startswith('%home%'):
-            path = os.path.expandvars(path)
-        path = path.replace('\\', '/')
-        if not path.endswith('/'):
-            path += '/'
-        return path
-    return ''
+def toNukePath(path):
+    """Convert Path/string to Nuke-friendly path with forward slashes."""
+    return Path(path).as_posix()
 
 # Prepare variables
-ICONS_SEP_FOLDER_PATH = checkPath(ICONS_SEP_FOLDER_PATH)
+ICONS_SEP_FOLDER_PATH = normalizePath(ICONS_SEP_FOLDER_PATH)
 currentModuleName = os.path.splitext(os.path.basename(__file__))[0]
 
 def isAnyGizmo(lst):
@@ -64,20 +53,20 @@ def isAnyGizmo(lst):
 def isAnyFolder(path, lst):
     """Return True if path contains at least one directory whose name is in lst."""
     for i in lst:
-        if os.path.isdir(path+i):
+        if (path / i).is_dir():
             return True
     return False
 
 def isAnyGizmosRecursive(path):
     """Recursively walk the folder and its contents; return True if any gizmo is found."""
-    path = checkPath(path)
-    if os.path.isdir(path):
-        lst = os.listdir(path)
+    path = normalizePath(path)
+    if path and path.is_dir():
+        lst = [entry.name for entry in path.iterdir()]
         if isAnyGizmo(lst):
             return True
         elif isAnyFolder(path, lst):
             for i in lst:
-                if isAnyGizmosRecursive(path+i):
+                if isAnyGizmosRecursive(path / i):
                     return True
     return False
 
@@ -208,13 +197,16 @@ def getIconPath(name, path=None):
     extension; path is the folder of the current gizmo/menu. Only .png is supported.
     """
     if ICONS_IN_SEP_FOLDER:
-        icon = ICONS_SEP_FOLDER_PATH+name+ICONS_EXT
-        if os.path.isfile(icon):
-            return icon
+        if ICONS_SEP_FOLDER_PATH:
+            icon = ICONS_SEP_FOLDER_PATH / (name + ICONS_EXT)
+            if icon.is_file():
+                return toNukePath(icon)
     elif path:
-        icon = checkPath(path)+name+ICONS_EXT
-        if os.path.isfile(icon):
-            return icon
+        base_path = normalizePath(path)
+        if base_path:
+            icon = base_path / (name + ICONS_EXT)
+            if icon.is_file():
+                return toNukePath(icon)
     if ALLOW_ICONS_FROM_PLUGIN_PATH:
         return name+ICONS_EXT
     else:
@@ -231,13 +223,9 @@ def getPseudonym(menu, fName):
 
 def folderName(path):
     """Return the last non-empty component of the path (the folder name)."""
-    path = checkPath(path)
-    spl = path.split('/')
-    if spl:
-        spl.reverse()
-        for i in spl:
-            if i:
-                return i
+    path = normalizePath(path)
+    if path:
+        return path.name
     return ''
 
 def addMenuRecursive(menu, path, isIgnoreSubfolders=False, index=-1, stop=False):
@@ -245,14 +233,16 @@ def addMenuRecursive(menu, path, isIgnoreSubfolders=False, index=-1, stop=False)
     Recursively add menu items for gizmos under path. isIgnoreSubfolders flattens
     subfolders into the same menu; stop stops recursion (used for base folder in multi-menu mode).
     """
-    path = checkPath(path)
+    path = normalizePath(path)
+    if not path:
+        return None
     fName = folderName(path)
     if fName and fName not in IGNORE_FOLDERS_FULL and fName not in IGNORE_MENU_FOLDERS and isAnyGizmosRecursive(path):
         if isIgnoreSubfolders:
             newMenu = menu
         else:
             newMenu = menu.addMenu(getPseudonym(menu, fName), icon=getIconPath(fName, path), index=index)
-        lst = os.listdir(path)
+        lst = [entry.name for entry in path.iterdir()]
         if isAnyGizmo(lst):
             for i in lst:
                 spl = os.path.splitext(i)
@@ -264,15 +254,18 @@ def addMenuRecursive(menu, path, isIgnoreSubfolders=False, index=-1, stop=False)
                     iconPath = getIconPath(gName, path)
                     if ext=='.gizmo':
                         if LOAD_GIZMO_AS_GROUP and gName not in GROUP_RESTRICTED:
-                            newMenu.addCommand(gName, currentModuleName+'.loadGizmoAsGroup("'+path+i+'")', icon=iconPath)
+                            gizmo_path = toNukePath(path / i)
+                            newMenu.addCommand(gName, f'{currentModuleName}.loadGizmoAsGroup("{gizmo_path}")', icon=iconPath)
                         else:
-                            newMenu.addCommand(gName, 'nuke.createNode("'+gName+'")', icon=iconPath)
+                            newMenu.addCommand(gName, f'nuke.createNode("{gName}")', icon=iconPath)
                     elif ext=='.nk':
-                        newMenu.addCommand(gName, 'nuke.nodePaste("'+path+i+'")', icon=iconPath)
+                        nk_path = toNukePath(path / i)
+                        newMenu.addCommand(gName, f'nuke.nodePaste("{nk_path}")', icon=iconPath)
         if not stop:
             for i in lst:
-                if os.path.isdir(path+i):
-                    addMenuRecursive(newMenu, path+i, isIgnoreSubfolders or fName in IGNORE_SUBFOLDERS_STRUCTURE)
+                child_path = path / i
+                if child_path.is_dir():
+                    addMenuRecursive(newMenu, child_path, isIgnoreSubfolders or fName in IGNORE_SUBFOLDERS_STRUCTURE)
         return newMenu
     return None
 
@@ -281,15 +274,15 @@ def addPluginPathRecursive(path):
     Add path and all its subfolders to nuke.pluginPath, except folders whose name
     is in IGNORE_FOLDERS_FULL.
     """
-    path = bakeRelativePath(path)
-    path = checkPath(path)
+    path = normalizePath(path)
     fName = folderName(path)
-    if os.path.isdir(path) and fName not in IGNORE_FOLDERS_FULL:
-        nuke.pluginAddPath(path)
-        lst = os.listdir(path)
+    if path and path.is_dir() and fName not in IGNORE_FOLDERS_FULL:
+        nuke.pluginAddPath(toNukePath(path))
+        lst = [entry.name for entry in path.iterdir()]
         for i in lst:
-            if os.path.isdir(path+i):
-                addPluginPathRecursive(path+i)
+            child_path = path / i
+            if child_path.is_dir():
+                addPluginPathRecursive(child_path)
 
 def updateMenu(path, name, stop=False):
     """
@@ -302,11 +295,12 @@ def updateMenu(path, name, stop=False):
         nodes.removeItem(name)
     else:
         index = -1
-    if os.path.isdir(path):
+    path = normalizePath(path)
+    if path and path.is_dir():
         addPluginPathRecursive(path)
         newMenu = addMenuRecursive(nodes, path, index=index, stop=stop)
         if newMenu:
-            updateCommand = '{}.updateMenu("{}", "{}", {})'.format(currentModuleName, path, newMenu.name(), stop)
+            updateCommand = f'{currentModuleName}.updateMenu("{toNukePath(path)}", "{newMenu.name()}", {stop})'
             newMenu.addCommand('update', updateCommand, icon='update.png')
 
 def createMenu():
@@ -315,18 +309,17 @@ def createMenu():
     in CUSTOM_GIZMOS_PATHS. addPluginPathRecursive is run from init.py, not here.
     """
     for CUSTOM_GIZMOS_PATH in CUSTOM_GIZMOS_PATHS:
-        CUSTOM_GIZMOS_PATH = bakeRelativePath(CUSTOM_GIZMOS_PATH)
-        CUSTOM_GIZMOS_PATH = checkPath(CUSTOM_GIZMOS_PATH)
-        if os.path.isdir(CUSTOM_GIZMOS_PATH):
+        CUSTOM_GIZMOS_PATH = normalizePath(CUSTOM_GIZMOS_PATH)
+        if CUSTOM_GIZMOS_PATH and CUSTOM_GIZMOS_PATH.is_dir():
             if not MULTI_MENU_MODE or MENU_FOR_BASE_FOLDER:
                 newMenu = addMenuRecursive(nuke.menu('Nodes'), CUSTOM_GIZMOS_PATH, stop=MULTI_MENU_MODE and MENU_FOR_BASE_FOLDER)
                 if newMenu:
-                    updateCommand = '{}.updateMenu("{}", "{}", {})'.format(currentModuleName, CUSTOM_GIZMOS_PATH, newMenu.name(), MULTI_MENU_MODE and MENU_FOR_BASE_FOLDER)
+                    updateCommand = f'{currentModuleName}.updateMenu("{toNukePath(CUSTOM_GIZMOS_PATH)}", "{newMenu.name()}", {MULTI_MENU_MODE and MENU_FOR_BASE_FOLDER})'
                     newMenu.addCommand('update', updateCommand, icon='update.png')
             if MULTI_MENU_MODE:
-                lst = os.listdir(CUSTOM_GIZMOS_PATH)
-                for folder in [CUSTOM_GIZMOS_PATH+f for f in lst if os.path.isdir(CUSTOM_GIZMOS_PATH+f)]:
+                lst = [entry for entry in CUSTOM_GIZMOS_PATH.iterdir() if entry.is_dir()]
+                for folder in lst:
                     newMenu = addMenuRecursive(nuke.menu('Nodes'), folder)
                     if newMenu:
-                        updateCommand = '{}.updateMenu("{}", "{}")'.format(currentModuleName, folder, newMenu.name())
+                        updateCommand = f'{currentModuleName}.updateMenu("{toNukePath(folder)}", "{newMenu.name()}")'
                         newMenu.addCommand('update', updateCommand, icon='update.png')
