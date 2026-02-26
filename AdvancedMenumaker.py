@@ -5,7 +5,7 @@ and creates Nuke menus for them.
 
 import nuke, os
 
-from config import (
+from advanced_menumaker.config import (
     CUSTOM_GIZMOS_PATHS,
     IGNORE_FOLDERS_FULL,
     IGNORE_MENU_FOLDERS,
