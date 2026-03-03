@@ -39,7 +39,8 @@ def normalizePath(path: Optional[PathInput]) -> Optional[Path]:
         # Use abspath to keep drive letter (e.g. Z:) instead of converting to UNC
         base = Path(os.path.abspath(os.path.dirname(__file__)))
         normalized = base / normalized
-    return normalized.absolute()
+    # Collapse any ".." while preserving drive letter
+    return Path(os.path.abspath(str(normalized)))
 
 def toNukePath(path: PathInput) -> str:
     """Convert Path/string to Nuke-friendly path with forward slashes."""
