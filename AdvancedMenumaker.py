@@ -36,8 +36,10 @@ def normalizePath(path: Optional[PathInput]) -> Optional[Path]:
     expanded = os.path.expandvars(os.path.expanduser(str(path)))
     normalized = Path(expanded)
     if not normalized.is_absolute():
-        normalized = Path(__file__).resolve().parent / normalized
-    return normalized.resolve(strict=False)
+        # Use abspath to keep drive letter (e.g. Z:) instead of converting to UNC
+        base = Path(os.path.abspath(os.path.dirname(__file__)))
+        normalized = base / normalized
+    return normalized.absolute()
 
 def toNukePath(path: PathInput) -> str:
     """Convert Path/string to Nuke-friendly path with forward slashes."""
