@@ -4,7 +4,7 @@ and creates Nuke menus for them.
 """
 
 import nuke, os
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, List
 
 from advanced_menumaker.config import (
     CUSTOM_GIZMOS_PATHS,
@@ -28,7 +28,7 @@ from advanced_menumaker.paths import (
 )
 currentModuleName: str = os.path.splitext(os.path.basename(__file__))[0]
 
-def getNewNodes(allNodes: Sequence[Any]) -> list[Any]:
+def getNewNodes(allNodes: Sequence[Any]) -> List[Any]:
     """
     Given a list of all nodes before creating new ones, return a list of newly
     created nodes that were not in the original list.
@@ -39,7 +39,7 @@ def getNewNodes(allNodes: Sequence[Any]) -> list[Any]:
             newNodes.append(i)
     return newNodes
 
-def getLastClickPosition() -> list[int]:
+def getLastClickPosition() -> List[int]:
     """
     Return the position of the last mouse click. Works even if nodes are selected:
     temporarily deselects them, creates a Dot to read position, then restores selection.
