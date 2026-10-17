@@ -6,6 +6,8 @@ Edit values here to customize how gizmo menus are built.
 CUSTOM_GIZMOS_PATHS = ['../../gizmos', '~/.nuke/my_gizmos']
 
 IGNORE_FOLDERS_FULL = [
+    'nuke15_and_lower',
+    'nuke16_and_higher',
     '__pycache__',
     '.git',
     'autosaves',
