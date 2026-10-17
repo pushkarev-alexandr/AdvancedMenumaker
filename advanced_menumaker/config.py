@@ -20,7 +20,8 @@ IGNORE_FOLDERS_FULL = [
     'ComfyUINuke',
     'NukeSamurai',
     'TechCheck',
-    'CA_Normals'
+    'CA_Normals',
+    "refforfreelance"
 ]
 
 IGNORE_MENU_FOLDERS = ['manual', 'obsolete', 'from_freelance']
